@@ -219,7 +219,7 @@ func (cli *CLI) Start() error {
 	// Start up remaining nodes
 	for _, node := range nodeQueue {
 		logger.Info(fmt.Sprintf("Waiting for height %v to start node %v...", node.StartAt, node.Name))
-		if err := mainNode.WaitFor(1, 20*time.Second); err != nil {
+		if err := mainNode.WaitFor(node.StartAt, 1*time.Minute); err != nil {
 			return err
 		}
 		if err := cli.runDocker("up", "-d", node.Name); err != nil {
