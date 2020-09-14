@@ -18,7 +18,7 @@ type Manifest struct {
 // ManifestNode represents a testnet manifest node.
 type ManifestNode struct {
 	IP        string
-	LocalPort uint32
+	ProxyPort uint32
 	StartAt   uint64 `toml:"start_at"`
 	FastSync  string `toml:"fast_sync"`
 	Database  string

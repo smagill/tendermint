@@ -26,7 +26,7 @@ type Node struct {
 	Name      string
 	Key       crypto.PrivKey
 	IP        net.IP
-	LocalPort uint32
+	ProxyPort uint32
 	StartAt   uint64
 	FastSync  string
 	Database  string
@@ -75,7 +75,7 @@ func NewNode(name string, nodeManifest ManifestNode) (*Node, error) {
 		Name:      name,
 		Key:       ed25519.GenPrivKey(),
 		IP:        ip,
-		LocalPort: nodeManifest.LocalPort,
+		ProxyPort: nodeManifest.ProxyPort,
 		StartAt:   nodeManifest.StartAt,
 		FastSync:  nodeManifest.FastSync,
 		Database:  database,
@@ -113,13 +113,13 @@ func (n Node) Validate(testnet Testnet) error {
 	if !testnet.IP.Contains(n.IP) {
 		return fmt.Errorf("node IP %v is not in testnet network %v", n.IP, testnet.IP)
 	}
-	if n.LocalPort > 0 {
-		if n.LocalPort <= 1024 {
-			return fmt.Errorf("local port %v must be >1024", n.LocalPort)
+	if n.ProxyPort > 0 {
+		if n.ProxyPort <= 1024 {
+			return fmt.Errorf("local port %v must be >1024", n.ProxyPort)
 		}
 		for _, peer := range testnet.Nodes {
-			if peer.Name != n.Name && peer.LocalPort == n.LocalPort {
-				return fmt.Errorf("peer %q also has local port %v", peer.Name, n.LocalPort)
+			if peer.Name != n.Name && peer.ProxyPort == n.ProxyPort {
+				return fmt.Errorf("peer %q also has local port %v", peer.Name, n.ProxyPort)
 			}
 		}
 	}
@@ -138,7 +138,7 @@ func (n Node) Validate(testnet Testnet) error {
 
 // Client returns an RPC client for a node.
 func (n Node) Client() (rpc.Client, error) {
-	return rpchttp.New(fmt.Sprintf("http://127.0.0.1:%v", n.LocalPort), "/websocket")
+	return rpchttp.New(fmt.Sprintf("http://127.0.0.1:%v", n.ProxyPort), "/websocket")
 }
 
 // WaitFor waits for the node to become available and catch up to the given block height.

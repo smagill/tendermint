@@ -204,7 +204,7 @@ func (cli *CLI) Start() error {
 		if err := node.WaitFor(0, 10*time.Second); err != nil {
 			return err
 		}
-		logger.Info(fmt.Sprintf("Node %v up on http://127.0.0.1:%v", node.Name, node.LocalPort))
+		logger.Info(fmt.Sprintf("Node %v up on http://127.0.0.1:%v", node.Name, node.ProxyPort))
 	}
 	if mainNode == nil {
 		return fmt.Errorf("no nodes to start")
@@ -229,7 +229,7 @@ func (cli *CLI) Start() error {
 			return err
 		}
 		logger.Info(fmt.Sprintf("Node %v up on http://127.0.0.1:%v at height %v",
-			node.Name, node.LocalPort, node.StartAt))
+			node.Name, node.ProxyPort, node.StartAt))
 	}
 
 	return nil

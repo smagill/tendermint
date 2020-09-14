@@ -133,7 +133,7 @@ services:
     image: tendermint/e2e-node
     ports:
     - 26656
-    - {{ if .LocalPort }}{{ .LocalPort }}:{{ end }}26657
+    - {{ if .ProxyPort }}{{ .ProxyPort }}:{{ end }}26657
     volumes:
     - ./{{ .Name }}:/tendermint
     networks:
