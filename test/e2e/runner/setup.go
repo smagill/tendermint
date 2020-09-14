@@ -178,6 +178,12 @@ func MakeConfig(testnet *Testnet, node *Node) (*config.Config, error) {
 	cfg.ProxyApp = "kvstore"
 	cfg.RPC.ListenAddress = "tcp://0.0.0.0:26657"
 
+	if node.FastSync == "" {
+		cfg.FastSyncMode = false
+	} else {
+		cfg.FastSync.Version = node.FastSync
+	}
+
 	for _, peer := range testnet.Nodes {
 		if peer.Name == node.Name {
 			continue

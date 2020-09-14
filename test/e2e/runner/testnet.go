@@ -28,6 +28,7 @@ type Node struct {
 	IP        net.IP
 	LocalPort uint32
 	StartAt   uint64
+	FastSync  string
 }
 
 // NewTestnet creates a testnet from a manifest.
@@ -71,6 +72,7 @@ func NewNode(name string, nodeManifest ManifestNode) (*Node, error) {
 		IP:        ip,
 		LocalPort: nodeManifest.LocalPort,
 		StartAt:   nodeManifest.StartAt,
+		FastSync:  nodeManifest.FastSync,
 	}, nil
 }
 
@@ -114,6 +116,11 @@ func (n Node) Validate(testnet Testnet) error {
 				return fmt.Errorf("peer %q also has local port %v", peer.Name, n.LocalPort)
 			}
 		}
+	}
+	switch n.FastSync {
+	case "", "v0", "v1", "v2":
+	default:
+		return fmt.Errorf("invalid fast sync setting %v", n.FastSync)
 	}
 	return nil
 }
