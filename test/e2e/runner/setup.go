@@ -115,12 +115,16 @@ func CopyBinary(binary string, target string) error {
 }
 
 // MakeDockerCompose generates a Docker Compose config for a testnet.
+// Must use version 2 Docker Compose format, to support IPv6.
 func MakeDockerCompose(testnet *Testnet) ([]byte, error) {
-	tmpl, err := template.New("docker-compose").Parse(`version: '3'
+	tmpl, err := template.New("docker-compose").Parse(`version: '2.4'
 
 networks:
   {{ .Name }}:
     driver: bridge
+{{- if .IsIPv6 }}
+    enable_ipv6: true
+{{- end }}
     ipam:
       driver: default
       config:
@@ -138,7 +142,7 @@ services:
     - ./{{ .Name }}:/tendermint
     networks:
       {{ $.Name }}:
-        ipv4_address: {{ .IP }}
+        ipv{{ if $.IsIPv6 }}6{{ else }}4{{ end}}_address: {{ .IP }}
 
 {{end}}`)
 	if err != nil {
@@ -193,7 +197,11 @@ func MakeConfig(testnet *Testnet, node *Node) (*config.Config, error) {
 		if cfg.P2P.PersistentPeers != "" {
 			cfg.P2P.PersistentPeers += ","
 		}
-		cfg.P2P.PersistentPeers += fmt.Sprintf("%x@%v:%v", peer.Key.PubKey().Address().Bytes(), peer.IP, 26656)
+		if testnet.IsIPv6() {
+			cfg.P2P.PersistentPeers += fmt.Sprintf("%x@[%v]:%v", peer.Key.PubKey().Address().Bytes(), peer.IP, 26656)
+		} else {
+			cfg.P2P.PersistentPeers += fmt.Sprintf("%x@%v:%v", peer.Key.PubKey().Address().Bytes(), peer.IP, 26656)
+		}
 	}
 	return cfg, nil
 }

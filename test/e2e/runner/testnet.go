@@ -142,6 +142,11 @@ func (n Node) Validate(testnet Testnet) error {
 	return nil
 }
 
+// IsIPv6 returns true if the testnet is an IPv6 network.
+func (t Testnet) IsIPv6() bool {
+	return t.IP.IP.To4() == nil
+}
+
 // Client returns an RPC client for a node.
 func (n Node) Client() (rpc.Client, error) {
 	return rpchttp.New(fmt.Sprintf("http://127.0.0.1:%v", n.ProxyPort), "/websocket")
