@@ -29,6 +29,7 @@ type Node struct {
 	LocalPort uint32
 	StartAt   uint64
 	FastSync  string
+	Database  string
 }
 
 // NewTestnet creates a testnet from a manifest.
@@ -66,6 +67,10 @@ func NewNode(name string, nodeManifest ManifestNode) (*Node, error) {
 	if ip == nil {
 		return nil, fmt.Errorf("invalid IP %q for node %q", nodeManifest.IP, name)
 	}
+	database := "goleveldb"
+	if nodeManifest.Database != "" {
+		database = nodeManifest.Database
+	}
 	return &Node{
 		Name:      name,
 		Key:       ed25519.GenPrivKey(),
@@ -73,6 +78,7 @@ func NewNode(name string, nodeManifest ManifestNode) (*Node, error) {
 		LocalPort: nodeManifest.LocalPort,
 		StartAt:   nodeManifest.StartAt,
 		FastSync:  nodeManifest.FastSync,
+		Database:  database,
 	}, nil
 }
 
@@ -121,6 +127,11 @@ func (n Node) Validate(testnet Testnet) error {
 	case "", "v0", "v1", "v2":
 	default:
 		return fmt.Errorf("invalid fast sync setting %v", n.FastSync)
+	}
+	switch n.Database {
+	case "goleveldb", "cleveldb", "boltdb", "rocksdb", "badgerdb":
+	default:
+		return fmt.Errorf("invalid database setting %v", n.Database)
 	}
 	return nil
 }

@@ -177,6 +177,7 @@ func MakeConfig(testnet *Testnet, node *Node) (*config.Config, error) {
 	cfg.Moniker = node.Name
 	cfg.ProxyApp = "kvstore"
 	cfg.RPC.ListenAddress = "tcp://0.0.0.0:26657"
+	cfg.DBBackend = node.Database
 
 	if node.FastSync == "" {
 		cfg.FastSyncMode = false
