@@ -27,6 +27,7 @@ type Node struct {
 	Key       crypto.PrivKey
 	IP        net.IP
 	LocalPort uint32
+	StartAt   uint64
 }
 
 // NewTestnet creates a testnet from a manifest.
@@ -69,6 +70,7 @@ func NewNode(name string, nodeManifest ManifestNode) (*Node, error) {
 		Key:       ed25519.GenPrivKey(),
 		IP:        ip,
 		LocalPort: nodeManifest.LocalPort,
+		StartAt:   nodeManifest.StartAt,
 	}, nil
 }
 

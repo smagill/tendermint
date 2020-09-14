@@ -19,6 +19,7 @@ type Manifest struct {
 type ManifestNode struct {
 	IP        string
 	LocalPort uint32
+	StartAt   uint64 `toml:"start_at"`
 }
 
 // ParseManifest parses a testnet manifest from TOML.

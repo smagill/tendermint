@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -177,25 +178,60 @@ func (cli *CLI) Setup() error {
 
 // Start starts the testnet. It waits for all nodes to become available.
 func (cli *CLI) Start() error {
-	for _, node := range cli.testnet.Nodes {
-		logger.Info(fmt.Sprintf("Starting node %v...", node.Name))
+	// Sort nodes by starting order
+	nodeQueue := cli.testnet.Nodes
+	sort.SliceStable(nodeQueue, func(i, j int) bool {
+		return nodeQueue[i].StartAt < nodeQueue[j].StartAt
+	})
+
+	// We'll use the first node as our main node for network status
+	if len(nodeQueue) == 0 || nodeQueue[0].StartAt > 0 {
+		return fmt.Errorf("no initial nodes found")
+	}
+	mainNode := nodeQueue[0]
+
+	// Start initial nodes (StartAt: 0)
+	logger.Info("Starting initial network nodes...")
+	for len(nodeQueue) > 0 && nodeQueue[0].StartAt == 0 {
+		node := nodeQueue[0]
+		nodeQueue = nodeQueue[1:]
+		if mainNode == nil {
+			mainNode = node
+		}
 		if err := cli.runDocker("up", "-d", node.Name); err != nil {
 			return err
 		}
-	}
-	logger.Info("Waiting for nodes...")
-	for _, node := range cli.testnet.Nodes {
 		if err := node.WaitFor(0, 10*time.Second); err != nil {
 			return err
 		}
 		logger.Info(fmt.Sprintf("Node %v up on http://127.0.0.1:%v", node.Name, node.LocalPort))
 	}
+	if mainNode == nil {
+		return fmt.Errorf("no nodes to start")
+	}
 
-	node := cli.testnet.Nodes[0]
-	logger.Info(fmt.Sprintf("Waiting for height 3 (polling node %v)", node.Name))
-	if err := node.WaitFor(3, 20*time.Second); err != nil {
+	// Wait for height 1
+	logger.Info("Waiting for height 1...")
+	if err := mainNode.WaitFor(1, 20*time.Second); err != nil {
 		return err
 	}
+
+	// Start up remaining nodes
+	for _, node := range nodeQueue {
+		logger.Info(fmt.Sprintf("Waiting for height %v to start node %v...", node.StartAt, node.Name))
+		if err := mainNode.WaitFor(1, 20*time.Second); err != nil {
+			return err
+		}
+		if err := cli.runDocker("up", "-d", node.Name); err != nil {
+			return err
+		}
+		if err := node.WaitFor(int(node.StartAt), 1*time.Minute); err != nil {
+			return err
+		}
+		logger.Info(fmt.Sprintf("Node %v up on http://127.0.0.1:%v at height %v",
+			node.Name, node.LocalPort, node.StartAt))
+	}
+
 	return nil
 }
 
