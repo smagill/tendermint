@@ -16,9 +16,10 @@ import (
 
 // Testnet represents a single testnet
 type Testnet struct {
-	Name  string
-	IP    *net.IPNet
-	Nodes []*Node
+	Name          string
+	IP            *net.IPNet
+	InitialHeight uint64
+	Nodes         []*Node
 }
 
 // Node represents a Tendermint node in a testnet
@@ -38,10 +39,15 @@ func NewTestnet(manifest Manifest) (*Testnet, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid network IP %q: %w", manifest.IP, err)
 	}
+	initialHeight := uint64(1)
+	if manifest.InitialHeight > 0 {
+		initialHeight = manifest.InitialHeight
+	}
 	testnet := &Testnet{
-		Name:  manifest.Name,
-		IP:    ipNet,
-		Nodes: []*Node{},
+		Name:          manifest.Name,
+		IP:            ipNet,
+		InitialHeight: initialHeight,
+		Nodes:         []*Node{},
 	}
 
 	for name, nodeManifest := range manifest.Nodes {
@@ -142,7 +148,7 @@ func (n Node) Client() (rpc.Client, error) {
 }
 
 // WaitFor waits for the node to become available and catch up to the given block height.
-func (n Node) WaitFor(height int, timeout time.Duration) error {
+func (n Node) WaitFor(height uint64, timeout time.Duration) error {
 	client, err := n.Client()
 	if err != nil {
 		return err

@@ -158,6 +158,7 @@ func MakeGenesis(testnet *Testnet) (types.GenesisDoc, error) {
 		GenesisTime:     time.Now(),
 		ChainID:         testnet.Name,
 		ConsensusParams: types.DefaultConsensusParams(),
+		InitialHeight:   int64(testnet.InitialHeight),
 	}
 	for _, node := range testnet.Nodes {
 		genesis.Validators = append(genesis.Validators, types.GenesisValidator{

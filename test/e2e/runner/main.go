@@ -211,8 +211,8 @@ func (cli *CLI) Start() error {
 	}
 
 	// Wait for height 1
-	logger.Info("Waiting for height 1...")
-	if err := mainNode.WaitFor(1, 20*time.Second); err != nil {
+	logger.Info(fmt.Sprintf("Waiting for initial height %v...", cli.testnet.InitialHeight))
+	if err := mainNode.WaitFor(cli.testnet.InitialHeight, 20*time.Second); err != nil {
 		return err
 	}
 
@@ -225,7 +225,7 @@ func (cli *CLI) Start() error {
 		if err := cli.runDocker("up", "-d", node.Name); err != nil {
 			return err
 		}
-		if err := node.WaitFor(int(node.StartAt), 1*time.Minute); err != nil {
+		if err := node.WaitFor(node.StartAt, 1*time.Minute); err != nil {
 			return err
 		}
 		logger.Info(fmt.Sprintf("Node %v up on http://127.0.0.1:%v at height %v",
