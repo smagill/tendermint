@@ -1,0 +1,4 @@
+build
+test/e2e
+test/logs
+test/p2p/data

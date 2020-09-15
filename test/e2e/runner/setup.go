@@ -3,9 +3,7 @@ package main
 
 import (
 	"bytes"
-	"debug/elf"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -19,7 +17,7 @@ import (
 )
 
 // Setup sets up testnet configuration in a directory.
-func Setup(testnet *Testnet, dir string, binaryPath string) error {
+func Setup(testnet *Testnet, dir string) error {
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return err
 	}
@@ -50,9 +48,6 @@ func Setup(testnet *Testnet, dir string, binaryPath string) error {
 		if err := os.MkdirAll(nodeDir, 0755); err != nil {
 			return err
 		}
-		if err := CopyBinary(binaryPath, filepath.Join(nodeDir, "tendermint")); err != nil {
-			return err
-		}
 		if err := os.MkdirAll(filepath.Join(nodeDir, "config"), 0755); err != nil {
 			return err
 		}
@@ -70,48 +65,6 @@ func Setup(testnet *Testnet, dir string, binaryPath string) error {
 	}
 
 	return nil
-}
-
-// CopyBinary copies the Tendermint binary, making sure it is an ELF binary.
-func CopyBinary(binary string, target string) error {
-	in, err := os.Open(binary)
-	if err != nil {
-		return err
-	}
-	defer in.Close()
-
-	binaryELF, err := elf.NewFile(in)
-	if err, ok := err.(*elf.FormatError); ok {
-		return fmt.Errorf("binary %q is not an ELF binary: %w", binary, err)
-	} else if err != nil {
-		return err
-	}
-	defer binaryELF.Close()
-	switch binaryELF.OSABI {
-	case elf.ELFOSABI_NONE, elf.ELFOSABI_LINUX:
-	default:
-		return fmt.Errorf("binary %q must be Linux ABI-compatible, got %v", binary, binaryELF.OSABI)
-	}
-	if binaryELF.Class != elf.ELFCLASS64 {
-		return fmt.Errorf("binary %q must be 64-bit, got %v", binary, binaryELF.Class)
-	}
-
-	_, err = in.Seek(0, io.SeekStart)
-	if err != nil {
-		return err
-	}
-
-	out, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, 0755)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, in)
-	if err != nil {
-		return err
-	}
-	return out.Close()
 }
 
 // MakeDockerCompose generates a Docker Compose config for a testnet.

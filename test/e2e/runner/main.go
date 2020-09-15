@@ -25,7 +25,6 @@ type CLI struct {
 	root    *cobra.Command
 	testnet *Testnet
 	dir     string
-	binary  string
 }
 
 // NewCLI sets up the CLI.
@@ -48,10 +47,6 @@ func NewCLI() *CLI {
 			if dir == "" {
 				dir = strings.TrimSuffix(file, filepath.Ext(file))
 			}
-			binary, err := cmd.Flags().GetString("binary")
-			if err != nil {
-				return err
-			}
 
 			manifest, err := LoadManifest(file)
 			if err != nil {
@@ -64,7 +59,6 @@ func NewCLI() *CLI {
 
 			cli.testnet = testnet
 			cli.dir = dir
-			cli.binary = binary
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -88,8 +82,6 @@ func NewCLI() *CLI {
 	_ = cli.root.MarkPersistentFlagRequired("file")
 	cli.root.PersistentFlags().StringP("dir", "d", "",
 		"Directory to use for testnet data (defaults to manifest dir)")
-	cli.root.PersistentFlags().StringP("binary", "b", "../../build/tendermint",
-		"Tendermint binary to copy into containers")
 
 	cli.root.AddCommand(&cobra.Command{
 		Use:   "setup",
@@ -169,7 +161,7 @@ func (cli *CLI) runDockerOutput(args ...string) error {
 // Setup generates the testnet configuration.
 func (cli *CLI) Setup() error {
 	logger.Info(fmt.Sprintf("Generating testnet files in %q", cli.dir))
-	err := Setup(cli.testnet, cli.dir, cli.binary)
+	err := Setup(cli.testnet, cli.dir)
 	if err != nil {
 		return err
 	}

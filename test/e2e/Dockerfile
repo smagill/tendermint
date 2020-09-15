@@ -1,17 +1,30 @@
-FROM alpine:3.12
+# We need to build in a Linux environment to support C libraries, e.g. RocksDB.
+# We use Debian instead of Alpine, so that we can use binary database packages
+# instead of spending time compiling them.
+FROM golang:1.15 AS build
 
-RUN apk update && \
-    apk --no-cache upgrade && \
-    apk --no-cache add curl jq file
+RUN apt-get update -y && apt-get upgrade -y
+RUN apt-get install -y libleveldb-dev librocksdb-dev
 
-# The test runner will copy the Tendermint binary into /tendermint/tendermint, and the configuration
-# into /tendermint/config/. This allows fast iteration when testing locally, without having to build
-# a new Docker image.
-VOLUME /tendermint
+# Set up build directory /src/tendermint
+ENV TENDERMINT_BUILD_OPTIONS badgerdb,boltdb,cleveldb,rocksdb
+WORKDIR /src/tendermint
+
+# Fetch dependencies separately (for layer caching)
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Build Tendermint and install into /usr/bin/tendermint
+COPY . .
+RUN make build && cp build/tendermint /usr/bin/tendermint
+
+# Set up runtime directory. We don't use a separate runtime image since we need
+# e.g. leveldb and rocksdb which are already installed in the build image.
 WORKDIR /tendermint
+VOLUME /tendermint
 ENV TMHOME=/tendermint
 
-EXPOSE 26656 26657
-ENTRYPOINT ["/tendermint/tendermint"]
+EXPOSE 26656 26657 26660
+ENTRYPOINT ["/usr/bin/tendermint"]
 CMD ["node"]
 STOPSIGNAL SIGTERM
