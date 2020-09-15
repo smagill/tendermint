@@ -18,11 +18,12 @@ type Manifest struct {
 
 // ManifestNode represents a testnet manifest node.
 type ManifestNode struct {
-	IP        string
-	ProxyPort uint32
-	StartAt   uint64 `toml:"start_at"`
-	FastSync  string `toml:"fast_sync"`
-	Database  string
+	IP           string
+	ProxyPort    uint32
+	StartAt      uint64 `toml:"start_at"`
+	FastSync     string `toml:"fast_sync"`
+	Database     string
+	ABCIProtocol string `toml:"abci_protocol"`
 }
 
 // ParseManifest parses a testnet manifest from TOML.

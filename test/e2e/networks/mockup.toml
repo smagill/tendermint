@@ -11,11 +11,13 @@ database = "goleveldb"
 ip = "10.200.0.3"
 proxyport = 5702
 database = "boltdb"
+abci_protocol = "tcp"
 
 [node.validator03]
 ip = "10.200.0.4"
 proxyport = 5703
 database = "badgerdb"
+abci_protocol = "grpc"
 
 [node.validator04]
 ip = "10.200.0.5"
@@ -23,3 +25,4 @@ proxyport = 5704
 database = "rocksdb"
 start_at = 1010
 fast_sync = "v2"
+abci_protocol = "unix"

@@ -24,13 +24,14 @@ type Testnet struct {
 
 // Node represents a Tendermint node in a testnet
 type Node struct {
-	Name      string
-	Key       crypto.PrivKey
-	IP        net.IP
-	ProxyPort uint32
-	StartAt   uint64
-	FastSync  string
-	Database  string
+	Name         string
+	Key          crypto.PrivKey
+	IP           net.IP
+	ProxyPort    uint32
+	StartAt      uint64
+	FastSync     string
+	Database     string
+	ABCIProtocol string
 }
 
 // NewTestnet creates a testnet from a manifest.
@@ -77,14 +78,19 @@ func NewNode(name string, nodeManifest ManifestNode) (*Node, error) {
 	if nodeManifest.Database != "" {
 		database = nodeManifest.Database
 	}
+	abci := "unix"
+	if nodeManifest.ABCIProtocol != "" {
+		abci = nodeManifest.ABCIProtocol
+	}
 	return &Node{
-		Name:      name,
-		Key:       ed25519.GenPrivKey(),
-		IP:        ip,
-		ProxyPort: nodeManifest.ProxyPort,
-		StartAt:   nodeManifest.StartAt,
-		FastSync:  nodeManifest.FastSync,
-		Database:  database,
+		Name:         name,
+		Key:          ed25519.GenPrivKey(),
+		IP:           ip,
+		ProxyPort:    nodeManifest.ProxyPort,
+		StartAt:      nodeManifest.StartAt,
+		FastSync:     nodeManifest.FastSync,
+		Database:     database,
+		ABCIProtocol: abci,
 	}, nil
 }
 
@@ -132,12 +138,17 @@ func (n Node) Validate(testnet Testnet) error {
 	switch n.FastSync {
 	case "", "v0", "v1", "v2":
 	default:
-		return fmt.Errorf("invalid fast sync setting %v", n.FastSync)
+		return fmt.Errorf("invalid fast sync setting %q", n.FastSync)
 	}
 	switch n.Database {
 	case "goleveldb", "cleveldb", "boltdb", "rocksdb", "badgerdb":
 	default:
-		return fmt.Errorf("invalid database setting %v", n.Database)
+		return fmt.Errorf("invalid database setting %q", n.Database)
+	}
+	switch n.ABCIProtocol {
+	case "unix", "tcp", "grpc":
+	default:
+		return fmt.Errorf("invalid ABCI protocol setting %q", n.ABCIProtocol)
 	}
 	return nil
 }

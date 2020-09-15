@@ -1,4 +1,4 @@
-// nolint: gosec
+// nolint: gosec,goconst
 package main
 
 import (
@@ -10,6 +10,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/BurntSushi/toml"
 	"github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/p2p"
 	"github.com/tendermint/tendermint/privval"
@@ -40,6 +41,10 @@ func Setup(testnet *Testnet, dir string) error {
 		if err != nil {
 			return err
 		}
+		appCfg, err := MakeAppConfig(testnet, node)
+		if err != nil {
+			return err
+		}
 		pv := privval.NewFilePV(node.Key,
 			filepath.Join(nodeDir, "config", "priv_validator_key.json"),
 			filepath.Join(nodeDir, "data", "priv_validator_state.json"),
@@ -58,6 +63,12 @@ func Setup(testnet *Testnet, dir string) error {
 			return err
 		}
 		config.WriteConfigFile(filepath.Join(nodeDir, "config", "config.toml"), cfg) // panics
+		if err := ioutil.WriteFile(filepath.Join(nodeDir, "config", "app.toml"), appCfg, 0644); err != nil {
+			return err
+		}
+		if err := genesis.SaveAs(filepath.Join(nodeDir, "config", "genesis.json")); err != nil {
+			return err
+		}
 		if err := MakeNodeKey(node).SaveAs(filepath.Join(nodeDir, "config", "node_key.json")); err != nil {
 			return err
 		}
@@ -134,9 +145,21 @@ func MakeGenesis(testnet *Testnet) (types.GenesisDoc, error) {
 func MakeConfig(testnet *Testnet, node *Node) (*config.Config, error) {
 	cfg := config.DefaultConfig()
 	cfg.Moniker = node.Name
-	cfg.ProxyApp = "tcp://127.0.0.1:27000"
+	cfg.ProxyApp = "tcp://127.0.0.1:30000"
 	cfg.RPC.ListenAddress = "tcp://0.0.0.0:26657"
 	cfg.DBBackend = node.Database
+
+	switch node.ABCIProtocol {
+	case "unix":
+		cfg.ProxyApp = "unix:///var/run/app.sock"
+	case "tcp":
+		cfg.ProxyApp = "tcp://127.0.0.1:30000"
+	case "grpc":
+		cfg.ProxyApp = "tcp://127.0.0.1:30000"
+		cfg.ABCI = "grpc"
+	default:
+		return nil, fmt.Errorf("unexpected ABCI protocol setting %q", node.ABCIProtocol)
+	}
 
 	if node.FastSync == "" {
 		cfg.FastSyncMode = false
@@ -158,6 +181,31 @@ func MakeConfig(testnet *Testnet, node *Node) (*config.Config, error) {
 		}
 	}
 	return cfg, nil
+}
+
+// MakeAppConfig generates an ABCI application config for a node.
+func MakeAppConfig(testnet *Testnet, node *Node) ([]byte, error) {
+	cfg := map[string]interface{}{}
+	switch node.ABCIProtocol {
+	case "unix":
+		cfg["listen"] = "unix:///var/run/app.sock"
+		cfg["grpc"] = false
+	case "tcp":
+		cfg["listen"] = "tcp://127.0.0.1:30000"
+		cfg["grpc"] = false
+	case "grpc":
+		cfg["listen"] = "tcp://127.0.0.1:30000"
+		cfg["grpc"] = true
+	default:
+		return nil, fmt.Errorf("unexpected ABCI protocol setting %q", node.ABCIProtocol)
+	}
+
+	var buf bytes.Buffer
+	err := toml.NewEncoder(&buf).Encode(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate app config: %w", err)
+	}
+	return buf.Bytes(), nil
 }
 
 // MakeNodeKey generates a node key.

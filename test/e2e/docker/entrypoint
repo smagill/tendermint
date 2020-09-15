@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-/usr/bin/app &
+/usr/bin/app /tendermint/config/app.toml &
 
 sleep 1
 
