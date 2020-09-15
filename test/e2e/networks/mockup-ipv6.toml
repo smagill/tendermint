@@ -1,0 +1,25 @@
+name = "mockup"
+ip = "fd80:b10c::/48"
+initial_height = 1000
+
+[node.validator01]
+ip = "fd80:b10c::2"
+proxyport = 5701
+database = "goleveldb"
+
+[node.validator02]
+ip = "fd80:b10c::3"
+proxyport = 5702
+database = "boltdb"
+
+[node.validator03]
+ip = "fd80:b10c::4"
+proxyport = 5703
+database = "badgerdb"
+
+[node.validator04]
+ip = "fd80:b10c::5"
+proxyport = 5704
+database = "rocksdb"
+start_at = 1010
+fast_sync = "v2"
