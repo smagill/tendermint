@@ -88,6 +88,7 @@ services:
   {{ .Name }}:
     container_name: {{ .Name }}
     image: tendermint/e2e-node
+    init: true
     ports:
     - 26656
     - {{ if .ProxyPort }}{{ .ProxyPort }}:{{ end }}26657
@@ -133,7 +134,7 @@ func MakeGenesis(testnet *Testnet) (types.GenesisDoc, error) {
 func MakeConfig(testnet *Testnet, node *Node) (*config.Config, error) {
 	cfg := config.DefaultConfig()
 	cfg.Moniker = node.Name
-	cfg.ProxyApp = "kvstore"
+	cfg.ProxyApp = "tcp://127.0.0.1:27000"
 	cfg.RPC.ListenAddress = "tcp://0.0.0.0:26657"
 	cfg.DBBackend = node.Database
 

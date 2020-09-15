@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+/usr/bin/app &
+
+sleep 1
+
+/usr/bin/tendermint "$@"

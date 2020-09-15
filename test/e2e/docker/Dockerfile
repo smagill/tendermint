@@ -17,6 +17,8 @@ RUN go mod download
 # Build Tendermint and install into /usr/bin/tendermint
 COPY . .
 RUN make build && cp build/tendermint /usr/bin/tendermint
+COPY test/e2e/docker/entrypoint /usr/bin/entrypoint
+RUN cd test/e2e && make app && cp app/app /usr/bin/app
 
 # Set up runtime directory. We don't use a separate runtime image since we need
 # e.g. leveldb and rocksdb which are already installed in the build image.
@@ -25,6 +27,6 @@ VOLUME /tendermint
 ENV TMHOME=/tendermint
 
 EXPOSE 26656 26657 26660
-ENTRYPOINT ["/usr/bin/tendermint"]
+ENTRYPOINT ["/usr/bin/entrypoint"]
 CMD ["node"]
 STOPSIGNAL SIGTERM
